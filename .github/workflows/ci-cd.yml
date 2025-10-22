@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: ["master"]
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  actions: read
+
 jobs:
   Build_and_Scan:
     name: Scan & Quality Gate
@@ -65,3 +71,18 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create Deployment Package
+        run: zip -r deploy_package.zip app/
+
+      - name: Deploy to Azure WebApp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          package: deploy_package.zip
+          startup-command: "npm start"
